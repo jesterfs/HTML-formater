@@ -3,7 +3,7 @@ require_relative 'list_file'
 module ListMaker
   class Controller
 
-    @@valid_actions = ['view', 'add', 'edit', 'quit']
+    @@valid_actions = ['view', 'add', 'edit', 'finalize', 'style', 'convert', 'quit']
     
     def initialize
       @list_file = ListMaker::ListFile.new
@@ -57,6 +57,12 @@ module ListMaker
           @list_file.add
         when 'edit'
           @list_file.edit(args)
+        when 'finalize'
+          @list_file.finalize
+        when 'style'
+          @list_file.style
+        when 'convert'
+          @list_file.convert
         else
           puts "\nI don't understand that command.\n\n"
         end
