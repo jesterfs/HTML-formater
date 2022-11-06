@@ -5,7 +5,17 @@ module ListMaker
     @@pdfname = 'MyLayout.pdf'
     @@stylesname = 'styles.txt'
 
-    @@valid_sections = ['h1', 'h2', 'p', 'hr', 'ol', 'ul', 'cancel']
+    @@valid_sections = ['h1', 'h2', 'p', 'hr', 'ol', 'ul', 'cancel', 'title', 'subtitle', 'paragraph', 'horizontal rule', 'bullet list', 'numbered list']
+
+    @@section_map = {
+      'title' => 'h1', 
+      'subtitle' => 'h2', 
+      'paragraph' => 'p',
+      'horizontal rule' => 'hr',
+      'numbered List' => 'ol',  
+      'bullet List' => 'ul', 
+      'cancel' => 'cancel'
+    }
     
     def initialize
       # locate list file in APP_ROOT
@@ -92,27 +102,29 @@ module ListMaker
       # Use File.new/open in append mode
 
       puts "Valid Sections:"
-      sections = @@valid_sections.join(", ")
+      sections = "Title, Subtitle, Paragraph, Horizontal Rule, Numbered List, Bullet List, Cancel"
       puts sections
         
       
       puts ""
       puts "What section do you want to add?"
       print "> "
-      new_section = gets.chomp
+      new_section_text = gets.chomp.downcase
 
-      until @@valid_sections.include? new_section.downcase
+      until @@valid_sections.include? new_section_text
         puts 'Please choose a valid section'
         print "> "
-        new_section = gets.chomp
+        new_section_text = gets.chomp
       end
+
+      new_section = @@section_map[new_section_text]
 
 
       @just_text = ['h1', 'h2']
       @lists = ['ul', 'ol']
 
       
-      if new_section.downcase == 'p'
+      if new_section_text == 'paragraph'
         puts "If adding multiple paragraphs, please replace line breaks with a #"
         text = $stdin.gets
 
@@ -129,8 +141,8 @@ module ListMaker
             file << "\n" # Because we used #chomp above
           end
         
-      elsif @just_text.include? new_section.downcase
-        puts "Please type out your #{new_section} and hit return"
+      elsif new_section_text == 'title'
+        puts "Please type out your title and hit return"
         #if new_section.downcase == 'p'
           #puts "If adding multiple paragraphs, please replace line breaks with a pound sign (#)"
         #end
@@ -153,12 +165,40 @@ module ListMaker
           
         #else
           File.open(@filepath, 'a') do |file|
-            file << "<#{new_section}> #{text} </#{new_section}>"
+            file << "<h1> #{text} <h1>"
             file << "\n" # Because we used #chomp above
           end
         #end  
-      elsif @lists.include? new_section.downcase
-        puts "list your items for your #{new_section} in order, seperated by a pound sign (#)"
+      elsif new_section_text == 'subtitle'
+        puts "Please type out your subtitle and hit return"
+        #if new_section.downcase == 'p'
+          #puts "If adding multiple paragraphs, please replace line breaks with a pound sign (#)"
+        #end
+        print "> "
+        text = gets.chomp
+
+        #if new_section.downcase == 'p'
+          #paragraphs = text.split("#")
+         # section_arr = []
+
+          #paragraphs.each do |item|
+          #  section_arr.push("  <p>#{item}</p> \n")
+         # end
+  
+          
+          #File.open(@filepath, 'a') do |file|
+          #  file << section_arr.join('')
+          #  file << "\n" # Because we used #chomp above
+          #end
+          
+        #else
+          File.open(@filepath, 'a') do |file|
+            file << "<h2> #{text} <h2>"
+            file << "\n" # Because we used #chomp above
+          end
+        #end 
+      elsif new_section_text == 'bullet list'
+        puts "list your items for your bullet list in order, seperated by a pound sign (#)"
         print '> '
         list = gets.chomp.split('#')
 
@@ -171,15 +211,35 @@ module ListMaker
 
         
         File.open(@filepath, 'a') do |file|
-          file << "<#{new_section}>"
+          file << "<ul>"
           file << "\n" # Because we used #chomp above
           file << section_arr.join('')
           
-          file << "</#{new_section}>"
+          file << "</ul>"
           file << "\n" # Because we used #chomp above
         end
+      elsif new_section_text == 'numbered list'
+        puts "list your items for your numbered list in order, seperated by a pound sign (#)"
+        print '> '
+        list = gets.chomp.split('#')
 
-      elsif new_section.downcase == 'hr'
+        section_arr = []
+        
+
+        list.each do |item|
+          section_arr.push("  <li>#{item}</li> \n")
+        end
+
+        
+        File.open(@filepath, 'a') do |file|
+          file << "<ol>"
+          file << "\n" # Because we used #chomp above
+          file << section_arr.join('')
+          
+          file << "</ol>"
+          file << "\n" # Because we used #chomp above
+        end  
+      elsif new_section_text == 'hr' || new_section_text == 'horizontal rule'
         puts 'adding a horizontal rule'
         File.open(@filepath, 'a') do |file|
           file << "<hr>"
@@ -239,15 +299,27 @@ module ListMaker
     def convert
 
       require "pdfcrowd"
+      puts "If converting a document created with this tool, provide the name."
+      puts "If converting an external file, please provide the full path."
+      file_name = gets.chomp
+      temp_arr = file_name.split('/')
+      if temp_arr.length > 1
+        path = file_name
+      else
+        path = File.join(APP_ROOT, file_name)
+      end
 
-      lines = File.readlines(@filepath)
+      pdf = temp_arr[temp_arr.length - 1].gsub('html', 'pdf')
+      new_pdf_path = File.join(APP_ROOT, pdf)
+
+      lines = File.readlines(path)
      
         unless lines.last.include? '</html>'
           self.finalize
         end
 
-      if File.exists?(@pdfpath)
-        puts "Do you want to overwrite #{@@pdfname}?"
+      if File.exists?(new_pdf_path)
+        puts "Do you want to overwrite #{pdf}?"
         print "> "
         response = gets.chomp
 
@@ -260,7 +332,7 @@ module ListMaker
         if response.downcase == 'no'
           return
         else
-          File.delete(@pdfpath)
+          File.delete(new_pdf_path)
         end
 
 
@@ -270,7 +342,7 @@ module ListMaker
           # create the API client instance
           client = Pdfcrowd::HtmlToPdfClient.new("jesterfs", "a844c9ad8ca7e4c694c4b786e4b4956b")
           # run the conversion and write the result to a file
-          client.convertFileToFile(@filepath, "MyLayout.pdf")
+          client.convertFileToFile(path, pdf)
       rescue Pdfcrowd::Error => why
           # report the error
           STDERR.puts "Pdfcrowd Error: #{why}"
@@ -280,6 +352,69 @@ module ListMaker
       end
 
     end
+
+
+    def convert_to_pdf
+
+      require "pdfcrowd"
+  
+
+
+      
+
+      puts "Please provide the path to your local PDF file and press enter."
+      response = gets.chomp
+      print "> "
+      pdf = response.gsub("'", "")
+      temp_arr = pdf.split('/')
+      new_name = temp_arr[temp_arr.length - 1].gsub('pdf', 'html')
+      
+      if File.exists?(new_name)
+        puts "Do you want to overwrite #{new_name}?"
+        print "> "
+        response = gets.chomp
+
+        until response.downcase == 'yes' || response.downcase == 'no'
+          puts "Please answer yes or no."
+          print "> "
+          response = gets.chomp
+        end
+
+        if response.downcase == 'no'
+          puts 'Please provide a new name'
+          print "> "
+          res = gets.chomp
+          new_name = "#{res}.html"
+        else
+          path = File.join(APP_ROOT, new_name)
+          File.delete(path)
+        end
+
+
+      end
+
+      
+      begin
+         #create the API client instance
+        client = Pdfcrowd::PdfToHtmlClient.new("jesterfs", "a844c9ad8ca7e4c694c4b786e4b4956b")
+    
+         #run the conversion and write the result to a file
+        client.convertFileToFile(pdf, new_name)
+      rescue Pdfcrowd::Error => why
+           #report the error
+          STDERR.puts "Pdfcrowd Error: #{why}"
+      
+           #rethrow or handle the exception
+          raise
+      end
+
+    end
+
+
+
+
+
+
     
     def edit(args=[])
       puts "\nEdit a List Item\n\n".upcase

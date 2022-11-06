@@ -3,7 +3,7 @@ require_relative 'list_file'
 module ListMaker
   class Controller
 
-    @@valid_actions = ['view', 'add', 'edit', 'finalize', 'style', 'convert', 'quit']
+    @@valid_actions = ['view', 'add', 'edit', 'finalize', 'style', 'convert', 'pdftohtml', 'quit']
     
     def initialize
       @list_file = ListMaker::ListFile.new
@@ -24,9 +24,12 @@ module ListMaker
     
       def introduction
         puts "-" * 60
-        puts "List Maker".upcase.center(60)
+        puts "HTML and PDF converter".upcase.center(60)
         puts "-" * 60
-        puts "This is an interactive program to help create and manage lists."
+        puts "This is a file converter and html creator that lets you:"
+        puts "1. Create an html file without coding knowledge"
+        puts "2. Convert a PDF file to an HTML file"
+        puts "3. Convert an HTML file to a PDF file"
       end
 
       def conclusion
@@ -63,6 +66,8 @@ module ListMaker
           @list_file.style
         when 'convert'
           @list_file.convert
+        when 'pdftohtml'
+          @list_file.convert_to_pdf
         else
           puts "\nI don't understand that command.\n\n"
         end
